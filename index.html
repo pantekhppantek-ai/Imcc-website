@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="id" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>I.M.C.C - Indonesian Minecraft Creator Community</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com">
+    </script>
+    <!-- Google Fonts: Inter & JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Premium Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        mineDark: {
+                            950: '#050508',
+                            900: '#0c0d14',
+                            800: '#141722',
+                            700: '#1e2335',
+                        },
+                        diamond: {
+                            DEFAULT: '#00F5FF',
+                            hover: '#00D8E2',
+                            glow: 'rgba(0, 245, 255, 0.4)'
+                        },
+                        emeraldGlow: {
+                            DEFAULT: '#00FF87',
+                            glow: 'rgba(0, 255, 135, 0.4)'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #050508;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #141722;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #00F5FF;
+        }
+
+        /* Ambient glowing effects */
+        .glow-cyan {
+            box-shadow: 0 0 25px rgba(0, 245, 255, 0.25);
+        }
+        .glow-emerald {
+            box-shadow: 0 0 25px rgba(0, 255, 135, 0.25);
+        }
+        .text-glow-cyan {
+            text-shadow: 0 0 10px rgba(0, 245, 255, 0.6);
+        }
+        .text-glow-emerald {
+            text-shadow: 0 0 10px rgba(0, 255, 135, 0.6);
+        }
+
+        /* Glassmorphism panel styling */
+        .glass-panel {
+            background: rgba(12, 13, 20, 0.75);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        /* Background Animated Grid */
+        .bg-grid {
+            background-size: 50px 50px;
+            background-image: linear-gradient(to right, rgba(255, 255, 255, 0.015) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
+        }
+
+        /* Page transition animation with Hardware Acceleration */
+        @keyframes pageFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(12px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .page-active {
+            display: block !important;
+            animation: pageFadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            will-change: transform, opacity;
+        }
+
+        @keyframes pulseGlow {
+            0%,
+            100% {
+                opacity: 0.15;
+            }
+            50% {
+                opacity: 0.3;
+            }
+        }
+        .pulse-bg {
+            animation: pulseGlow 10s infinite ease-in-out;
+        }
+
+        /* Smooth transitions for all interactive elements */
+        * {
+            transition-property: background-color, border-color, color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter;
+            transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+            transition-duration: 150ms;
+        }
+
+        /* Smoother scrolling */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* Will-change for performance optimization */
+        .nav-pill,
+        .mobile-nav-pill,
+        .glass-panel,
+        .creator-card,
+        button,
+        a {
+            will-change: transform;
+        }
+
+        /* Remove heavy click effects */
+        button:active,
+        a:active {
+            transform: none !important;
+        }
+
+        /* Creator card subtle hover only - no click effects */
+        .creator-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .creator-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+        .creator-card:active {
+            transform: none !important;
+            box-shadow: none !important;
+        }
+
+        /* Upload progress bar animation */
+        @keyframes progressPulse {
+            0%,
+            100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.8;
+            }
+        }
+        .upload-progress {
+            animation: progressPulse 1.5s ease-in-out infinite;
+        }
+        
+        /* Admin menu hidden by default */
+        .admin-only {
+            display: none;
+        }
+        .admin-only.visible {
+            display: flex;
+        }
+        .admin-only.inline-visible {
+            display: inline-flex;
+        }
+    </style>
+</head>
+<body class="bg-mineDark-950 text-gray-100 font-sans overflow-x-hidden min-h-screen relative bg-grid">
+
+    <!-- Custom Particle Canvas Background -->
+    <canvas id="particleCanvas" class="fixed top-0 left-0 w-full h-full pointer-events-none z-0 opacity-40"></canvas>
+
+    <!-- Glowing Background blobs -->
+    <div class="fixed top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-diamond opacity-5 blur-[150px] pointer-events-none pulse-bg z-0"></div>
+    <div class="fixed bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-emeraldGlow opacity-5 blur-[150px] pointer-events-none pulse-bg z-0" style="animation-delay: 5s;"></div>
+
+    <!-- Toast Notification Wrapper -->
+    <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-3"></div>
+
+    <!-- Custom Modern Full Confirmation Modal -->
+    <div id="confirmModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4">
+        <div class="glass-panel max-w-sm w-full p-6 rounded-2xl border border-white/10 shadow-2xl space-y-4">
+            <div class="text-center">
+                <i class="fa-solid fa-triangle-exclamation text-yellow-500 text-4xl mb-2"></i>
+                <h3 class="text-lg font-bold text-white">Apakah Anda Yakin?</h3>
+                <p id="confirmModalText" class="text-xs text-gray-400 mt-2">Tindakan ini akan menyetel ulang semua data creator dan pendaftaran di Realtime Database kembali ke setelan default bawaan.</p>
+            </div>
+            <div class="flex gap-3 pt-2">
+                <button id="confirmYesBtn" class="flex-1 py-2.5 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl text-xs transition-colors">Ya, Reset</button>
+                <button id="confirmNoBtn" class="flex-1 py-2.5 bg-white/5 hover:bg-white/10 text-gray-300 font-bold rounded-xl text-xs transition-colors border border-white/5">Batal</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Token Login Modal -->
+    <div id="tokenModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4">
+        <div class="glass-panel max-w-sm w-full p-6 rounded-2xl border border-white/10 shadow-2xl space-y-4">
+            <div class="text-center">
+                <i class="fa-solid fa-lock text-diamond text-4xl mb-2"></i>
+                <h3 class="text-lg font-bold text-white">Akses Admin Panel</h3>
+                <p class="text-xs text-gray-400 mt-2">Masukkan token autentikasi untuk melanjutkan ke panel admin.</p>
+            </div>
+            <div class="space-y-3">
+                <input type="password" id="tokenInput" placeholder="Masukkan token..." class="w-full bg-mineDark-900 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-gray-200 focus:outline-none focus:border-diamond">
+                <p id="tokenError" class="text-xs text-red-400 hidden">Token salah. Silakan coba lagi.</p>
+            </div>
+            <div class="flex gap-3 pt-2">
+                <button id="tokenSubmitBtn" class="flex-1 py-2.5 bg-diamond hover:bg-diamond-hover text-black font-bold rounded-xl text-xs transition-colors">Verifikasi</button>
+                <button id="tokenCancelBtn" class="flex-1 py-2.5 bg-white/5 hover:bg-white/10 text-gray-300 font-bold rounded-xl text-xs transition-colors border border-white/5">Batal</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Image Upload Modal -->
+    <div id="uploadModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4">
+        <div class="glass-panel max-w-md w-full p-6 sm:p-8 rounded-3xl border border-white/10 shadow-2xl space-y-6">
+            <div class="flex justify-between items-center border-b border-white/10 pb-4">
+                <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-cloud-arrow-up text-diamond"></i> Upload Foto
+                </h3>
+                <button onclick="closeUploadModal()" class="text-gray-400 hover:text-white transition-colors">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <div class="space-y-4">
+                <div class="text-center space-y-3">
+                    <div id="uploadPreviewContainer" class="w-32 h-32 mx-auto rounded-2xl border-2 border-dashed border-white/20 flex items-center justify-center overflow-hidden bg-mineDark-900">
+                        <i class="fa-solid fa-image text-4xl text-gray-600" id="uploadPlaceholder"></i>
+                        <img id="uploadPreview" src="" alt="Preview" class="hidden w-full h-full object-cover">
+                    </div>
+                    <p class="text-xs text-gray-400">Pilih foto dari galeri untuk diupload</p>
+                </div>
+
+                <input type="file" id="fileInput" accept="image/*" class="hidden" onchange="handleFileSelect(event)">
+
+                <button onclick="document.getElementById('fileInput').click()" class="w-full py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-xs font-bold text-gray-300 transition-all">
+                    <i class="fa-solid fa-folder-open mr-2"></i> Pilih dari Galeri
+                </button>
+
+                <div id="uploadProgressContainer" class="hidden space-y-2">
+                    <div class="w-full bg-mineDark-900 rounded-full h-2 overflow-hidden">
+                        <div id="uploadProgressBar" class="bg-gradient-to-r from-diamond to-emeraldGlow h-full rounded-full upload-progress" style="width: 0%"></div>
+                    </div>
+                    <p id="uploadStatus" class="text-xs text-gray-400 text-center">Mengupload...</p>
+                </div>
+
+                <div id="uploadResult" class="hidden space-y-2">
+                    <div class="bg-mineDark-900 rounded-xl p-3 border border-white/10">
+                        <p class="text-xs text-gray-400 mb-1">URL Gambar:</p>
+                        <div class="flex items-center gap-2">
+                            <input type="text" id="uploadedUrl" readonly class="flex-1 bg-mineDark-950 border border-white/10 rounded-lg px-3 py-2 text-xs text-gray-200 focus:outline-none">
+                            <button onclick="copyUploadedUrl()" class="px-3 py-2 bg-diamond/10 hover:bg-diamond/20 border border-diamond/30 rounded-lg text-diamond text-xs font-bold transition-all">
+                                <i class="fa-solid fa-copy"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <button id="useUploadedUrlBtn" class="w-full py-2.5 bg-gradient-to-r from-diamond to-emeraldGlow text-black font-bold rounded-xl text-xs uppercase transition-all">
+                        Gunakan URL Ini
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Modern Creator Edit Modal -->
+    <div id="editModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4 overflow-y-auto">
+        <div class="glass-panel max-w-2xl w-full p-6 sm:p-8 rounded-3xl border border-white/10 shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b border-white/10 pb-4">
+                <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-user-pen text-diamond"></i> Edit Profil Creator
+                </h3>
+                <button onclick="closeEditModal()" class="text-gray-400 hover:text-white transition-colors">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <form id="editCreatorForm" class="space-y-4 text-xs">
+                <input type="hidden" id="editKey">
+
+                <div>
+                    <label class="block font-bold text-gray-400 mb-1.5 uppercase">Nama Lengkap / Nickname</label>
+                    <input type="text" id="editName" required class="w-full bg-mineDark-900 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-gray-200 focus:outline-none focus:border-diamond">
+                </div>
+
+                <div>
+                    <label class="block font-bold text-gray-400 mb-1.5 uppercase">Foto Avatar URL</label>
+                    <div class="flex gap-2">
+                        <input type="url" id="editAvatar" class="flex-1 bg-mineDark-900 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-gray-200 focus:outline-none focus:border-diamond">
+                        <button type="button" onclick="openUploadModal('editAvatar')" class="px-4 py-2.5 bg-diamond/10 hover:bg-diamond/20 border border-diamond/30 rounded-xl text-diamond text-xs font-bold transition-all whitespace-nowrap">
+                            <i class="fa-solid fa-upload mr-1"></i> Upload
+                        </button>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block font-bold text-gray-400 mb-1.5 uppercase">Biografi Singkat</label>
+                    <textarea id="editBio" required rows="3" class="w-full bg-mineDark-900 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-gray-200 focus:outline-none focus:border-diamond resize-none"></textarea>
+                </div>
+
+                <div class="space-y-3 pt-2">
+                    <span class="block font-bold text-gray-400 uppercase tracking-widest text-[9px] border-b border-white/5 pb-1">Tautan Media Sosial (Opsional)</span>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div class="relative">
+                            <input type="url" id="editYoutube" placeholder="YouTube Link" class="w-full bg-mineDark-900 border border-white/10 rounded-xl pl-9 pr-3 py-2 text-[11px] text-gray-200 focus:outline-none focus:border-diamond">
+                            <i class="fa-brands fa-youtube absolute left-3 top-2.5 text-red-500"></i>
+                        </div>
+                        <div class="relative">
+                            <input type="url" id="editTiktok" placeholder="TikTok Link" class="w-full bg-mineDark-900 border border-white/10 rounded-xl pl-9 pr-3 py-2 text-[11px] text-gray-200 focus:outline-none focus:border-diamond">
+                            <i class="fa-brands fa-tiktok absolute left-3 top-2.5 text-pink-500"></i>
+                        </div>
+                        <div class="relative">
+                            <input type="url" id="editTelegram" placeholder="Telegram Link" class="w-full bg-mineDark-900 border border-white/10 rounded-xl pl-9 pr-3 py-2 text-[11px] text-gray-200 focus:outline-none focus:border-diamond">
+                            <i class="fa-brands fa-telegram absolute left-3 top-2.5 text-sky-400"></i>
+                        </div>
+                        <div class="relative">
+                            <input type="url" id="editDiscord" placeholder="Discord Invite" class="w-full bg-mineDark-900 border border-white/10 rounded-xl pl-9 pr-3 py-2 text-[11px] text-gray-200 focus:outline-none focus:border-diamond">
+                            <i class="fa-brands fa-discord absolute left-3 top-2.5 text-indigo-400"></i>
+                        </div>
+                        <div class="relative">
+                            <input type="url" id="editInstagram" placeholder="Instagram Link" class="w-full bg-mineDark-900 border border-white/10 rounded-xl pl-9 pr-3 py-2 text-[11px] text-gray-200 focus:outline-none focus:border-diamond">
+                            <i class="fa-brands fa-instagram absolute left-3 top-2.5 text-pink-400"></i>
+                        </div>
+                        <div class="relative">
+                            <input type="url" id="editGithub" placeholder="GitHub Link" class="w-full bg-mineDark-900 border border-white/10 rounded-xl pl-9 pr-3 py-2 text-[11px] text-gray-200 focus:outline-none focus:border-diamond">
+                            <i class="fa-brands fa-github absolute left-3 top-2.5 text-gray-400"></i>
+                        </div>
+                        <div class="relative">
+                            <input type="url" id="editWhatsapp" placeholder="WhatsApp Channel" class="w-full bg-mineDark-900 border border-white/10 rounded-xl pl-9 pr-3 py-2 text-[11px] text-gray-200 focus:outline-none focus:border-diamond">
+                            <i class="fa-brands fa-whatsapp absolute left-3 top-2.5 text-emerald-500"></i>
+                        </div>
+                        <div class="relative">
+                            <input type="url" id="editDonate" placeholder="Donate Link" class="w-full bg-mineDark-900 border border-white/10 rounded-xl pl-9 pr-3 py-2 text-[11px] text-gray-200 focus:outline-none focus:border-diamond">
+                            <i class="fa-solid fa-hand-holding-dollar absolute left-3 top-2.5 text-emeraldGlow"></i>
+                        </div>
+                        <div class="relative">
+                            <input type="url" id="editFacebook" placeholder="Facebook Link" class="w-full bg-mineDark-900 border border-white/10 rounded-xl pl-9 pr-3 py-2 text-[11px] text-gray-200 focus:outline-none focus:border-diamond">
+                            <i class="fa-brands fa-facebook absolute left-3 top-2.5 text-blue-500"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex gap-3 pt-4">
+                    <button type="submit" class="flex-1 py-3 bg-gradient-to-r from-diamond to-emeraldGlow text-black font-extrabold tracking-wider uppercase rounded-xl transition-all hover:shadow-[0_0_20px_rgba(0,245,255,0.3)]">
+                        Simpan Perubahan <i class="fa-solid fa-floppy-disk ml-1.5"></i>
+                    </button>
+                    <button type="button" onclick="closeEditModal()" class="px-5 py-3 bg-white/5 hover:bg-white/10 border border-white/5 text-gray-300 font-bold rounded-xl transition-colors">
+                        Batal
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Full-Width Header (Integrated, Non-floating, Edge-to-Edge) -->
+    <header class="relative sticky top-0 z-40 w-full bg-mineDark-950/85 backdrop-blur-xl border-b border-b-white/5 py-4 px-4 sm:px-8 lg:px-12" id="mainHeader">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+            <!-- Logo Section -->
+            <a href="#dashboard" class="flex items-center space-x-3 group">
+                <div class="w-10 h-10 rounded-xl overflow-hidden border border-white/10 transition-all duration-300 group-hover:scale-105 group-hover:border-diamond/50">
+                    <img src="https://i.urusai.cc/nLeNn.jpg" alt="IMCC Logo" class="w-full h-full object-cover">
+                </div>
+                <div class="flex flex-col">
+                    <span class="font-extrabold text-2xl tracking-widest text-white font-mono group-hover:text-glow-cyan transition-all duration-300">I.M.C.C</span>
+                    <span class="text-[9px] uppercase tracking-wider text-gray-400 font-bold"></span>
+                </div>
+            </a>
+
+            <!-- Desktop Nav Items - Isolated Floating Pills -->
+            <nav class="hidden md:flex items-center gap-4">
+                <a href="#dashboard" data-target="dashboard" class="nav-pill px-5 py-2.5 rounded-xl text-xs font-bold tracking-widest border transition-all duration-300 uppercase flex items-center gap-2">
+                    <i class="fa-solid fa-house-chimney text-[11px]"></i> Dashboard
+                </a>
+                <a href="#creators" data-target="creators" class="nav-pill px-5 py-2.5 rounded-xl text-xs font-bold tracking-widest border transition-all duration-300 uppercase flex items-center gap-2">
+                    <i class="fa-solid fa-users text-[11px]"></i> Creator
+                </a>
+                <a href="#join" data-target="join" class="nav-pill px-5 py-2.5 rounded-xl text-xs font-bold tracking-widest border transition-all duration-300 uppercase flex items-center gap-2">
+                    <i class="fa-solid fa-user-plus text-[11px]"></i> Daftar
+                </a>
+                <!-- Admin Panel Link - Only visible for admin users -->
+                <a href="#admin" data-target="admin" class="admin-only nav-pill px-5 py-2.5 rounded-xl text-xs font-bold tracking-widest border transition-all duration-300 uppercase flex items-center gap-2 border-dashed" id="desktopAdminLink">
+                    <i class="fa-solid fa-lock text-[11px]"></i> Admin Panel
+                </a>
+            </nav>
+
+            <!-- Mobile Menu Toggle Button -->
+            <button id="mobileMenuBtn" class="md:hidden p-2 text-gray-400 hover:text-white transition-colors" aria-label="Buka Menu">
+                <i class="fa-solid fa-bars text-2xl" id="menuIcon"></i>
+            </button>
+        </div>
+
+        <!-- Mobile Drawer Navigation (Absolute Overlay with Blur) -->
+        <div id="mobileMenu" class="hidden md:hidden absolute top-full left-0 w-full bg-mineDark-950/95 backdrop-blur-xl border-b border-white/5 p-4 flex flex-col gap-3 shadow-2xl z-50">
+            <a href="#dashboard" data-target="dashboard" class="mobile-nav-pill flex items-center justify-between px-5 py-4 rounded-xl text-sm font-semibold tracking-wider text-gray-300 bg-mineDark-900/90 border border-white/5 transition-all uppercase">
+                <span class="flex items-center gap-3"><i class="fa-solid fa-house-chimney text-diamond"></i> Dashboard</span>
+                <i class="fa-solid fa-chevron-right text-xs text-gray-500"></i>
+            </a>
+            <a href="#creators" data-target="creators" class="mobile-nav-pill flex items-center justify-between px-5 py-4 rounded-xl text-sm font-semibold tracking-wider text-gray-300 bg-mineDark-900/90 border border-white/5 transition-all uppercase">
+                <span class="flex items-center gap-3"><i class="fa-solid fa-users text-emeraldGlow"></i> Creator</span>
+                <i class="fa-solid fa-chevron-right text-xs text-gray-500"></i>
+            </a>
+            <a href="#join" data-target="join" class="mobile-nav-pill flex items-center justify-between px-5 py-4 rounded-xl text-sm font-bold tracking-wider text-gray-300 bg-mineDark-900/90 border border-white/5 transition-all uppercase">
+                <span class="flex items-center gap-3"><i class="fa-solid fa-user-plus text-diamond"></i> Daftar</span>
+                <i class="fa-solid fa-arrow-right-to-bracket text-xs text-gray-500"></i>
+            </a>
+            <!-- Admin Panel Mobile Link - Only visible for admin users -->
+            <a href="#admin" data-target="admin" class="admin-only mobile-nav-pill flex items-center justify-between px-5 py-4 rounded-xl text-sm font-bold tracking-wider text-gray-300 bg-mineDark-900/90 border border-white/5 transition-all uppercase" id="mobileAdminLink">
+                <span class="flex items-center gap-3"><i class="fa-solid fa-lock text-yellow-500"></i> Admin Panel</span>
+                <i class="fa-solid fa-gears text-xs text-gray-500"></i>
+            </a>
+        </div>
+    </header>
+
+    <!-- MAIN CONTAINER FOR VIRTUAL PAGES -->
+    <main class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-24 pt-12">
+
+        <!-- ============================================ -->
+        <!-- PAGE 1: DASHBOARD                            -->
+        <!-- ============================================ -->
+        <div id="page-dashboard" class="virtual-page hidden space-y-16">
+
+            <!-- Hero Layout -->
+            <div class="flex flex-col justify-center items-center text-center space-y-10 py-12 max-w-4xl mx-auto">
+                <div class="inline-flex items-center space-x-2 bg-white/5 border border-white/10 px-4 py-1.5 rounded-full">
+                    <span class="w-2.5 h-2.5 rounded-full bg-emeraldGlow animate-pulse"></span>
+                    <span class="text-[10px] font-extrabold tracking-widest uppercase text-emeraldGlow">Elite Minecraft Community ID</span>
+                </div>
+
+                <div class="space-y-6">
+                    <h1 class="text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight text-white leading-tight">
+                        Creator I.M.C.C <br>
+                        <span class="text-transparent bg-clip-text bg-gradient-to-r from-diamond via-cyan-400 to-emeraldGlow text-glow-cyan">Minecraft Indonesia.</span>
+                    </h1>
+                    <p class="text-gray-400 text-sm sm:text-lg font-light leading-relaxed max-w-2xl mx-auto">
+                        Selamat datang di website resmi <strong>I.M.C.C</strong> (Indonesian Minecraft Creator Community). Wadah perkumpulan, kolaborasi, dan pameran talenta hebat pembuat konten Minecraft terbaik di tanah air.
+                    </p>
+                </div>
+
+                <div class="flex flex-col sm:flex-row items-center justify-center gap-4 w-full sm:w-auto">
+                    <a href="#creators" class="w-full sm:w-auto text-center px-8 py-4 bg-gradient-to-r from-diamond to-emeraldGlow text-black rounded-xl font-extrabold tracking-wider hover:shadow-[0_0_30px_rgba(0,245,255,0.4)] transition-all duration-300">
+                        <i class="fa-solid fa-users mr-2"></i> JELAJAHI CREATOR
+                    </a>
+                    <a href="#join" class="w-full sm:w-auto text-center px-8 py-4 bg-white/5 border border-white/10 hover:border-white/20 hover:bg-white/10 rounded-xl font-bold tracking-wider transition-all duration-300">
+                        <i class="fa-solid fa-user-plus mr-2"></i> DAFTAR SEKARANG
+                    </a>
+                </div>
+
+                <!-- Statistics Bar -->
+                <div class="grid grid-cols-3 gap-8 sm:gap-16 pt-12 border-t border-white/5 w-full max-w-2xl justify-items-center">
+                    <div>
+                        <p id="stats-count" class="text-3xl sm:text-4xl font-extrabold text-white font-mono">0</p>
+                        <p class="text-[10px] text-gray-500 uppercase tracking-widest font-bold mt-1">Kreator Elite</p>
+                    </div>
+                    <div>
+                        <p class="text-3xl sm:text-4xl font-extrabold text-white font-mono">1</p>
+                        <p class="text-[10px] text-gray-500 uppercase tracking-widest font-bold mt-1">Kategori Konten</p>
+                    </div>
+                    <div>
+                        <p class="text-3xl sm:text-4xl font-extrabold text-white font-mono">100%</p>
+                        <p class="text-[10px] text-gray-500 uppercase tracking-widest font-bold mt-1">Kreatif & Orisinal</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ============================================ -->
+        <!-- PAGE 2: CREATOR ROSTER                       -->
+        <!-- ============================================ -->
+        <div id="page-creators" class="virtual-page hidden space-y-12">
+
+            <!-- Page Header info -->
+            <div class="flex flex-col md:flex-row justify-between items-end gap-6 border-b border-white/5 pb-8">
+                <div>
+                    <span class="text-xs font-bold tracking-widest text-emeraldGlow uppercase font-mono">ELITE CREATOR</span>
+                    <h2 class="text-3xl sm:text-4xl font-extrabold mt-2 text-white">Perkumpulan Kreator I.M.C.C</h2>
+                    <p class="text-gray-400 mt-2 text-xs sm:text-sm max-w-xl">
+                        Kumpulan talenta luar biasa dari seluruh Indonesia yang berdedikasi membangun konten orisinal dan mengedukasi ekosistem Minecraft.
+                    </p>
+                </div>
+
+                <!-- Live Search / Filter Input Controls -->
+                <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
+                    <div class="relative w-full sm:w-80">
+                        <input type="text" id="creatorSearchInput" placeholder="Cari nama creator..." class="w-full bg-mineDark-900 border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-xs text-gray-300 focus:outline-none focus:border-diamond transition-colors">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3.5 text-gray-500 text-xs"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dynamic Creator Grid Cards with Social Links -->
+            <div id="creatorsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <!-- Dynamically Rendered via Javascript (Firebase) -->
+            </div>
+
+            <!-- Empty State Search -->
+            <div id="noResults" class="hidden text-center py-20 bg-white/[0.01] border border-dashed border-white/10 rounded-3xl">
+                <i class="fa-regular fa-folder-open text-gray-600 text-5xl mb-4"></i>
+                <h3 class="text-lg font-bold text-gray-400">Tidak ada creator ditemukan</h3>
+                <p class="text-gray-500 text-xs mt-2">Coba ubah kata kunci pencarian Anda.</p>
+            </div>
+        </div>
+
+        <!-- ============================================ -->
+        <!-- PAGE 3: REGISTER / DAFTAR                    -->
+        <!-- ============================================ -->
+        <div id="page-join" class="virtual-page hidden space-y-12">
+
+            <!-- Page Header -->
+            <div class="text-center max-w-2xl mx-auto space-y-3">
+                <span class="text-xs font-bold tracking-widest text-diamond bg-diamond/10 border border-diamond/20 px-3 py-1 rounded-full uppercase font-mono">PENDAFTARAN CREATOR NEW</span>
+                <h2 class="text-3xl sm:text-4xl font-extrabold text-white">Gabung Perkumpulan Creator</h2>
+                <div class="w-12 h-1 bg-gradient-to-r from-diamond to-emeraldGlow mx-auto rounded"></div>
+                <p class="text-gray-400 text-xs sm:text-sm">
+                    Tunjukkan eksistensi Anda sebagai kreator Minecraft Indonesia dan berjejaring bersama kreator hebat lainnya.
+                </p>
+            </div>
+
+            <!-- Registration Form with Social Media Link Additions -->
+            <form id="imccJoinForm" class="glass-panel rounded-3xl p-8 sm:p-12 border border-white/10 space-y-6 relative max-w-3xl mx-auto shadow-2xl">
+
+                <!-- Nama & No HP -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <div>
+                        <label for="fullName" class="block text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Nama Lengkap / Nickname Minecraft</label>
+                        <input type="text" id="fullName" required placeholder="Contoh: Steve Nusantara" class="w-full bg-mineDark-900 border border-white/10 rounded-xl px-4 py-3 text-xs text-gray-200 placeholder-gray-600 focus:outline-none focus:border-diamond transition-colors">
+                    </div>
+                    <div>
+                        <label for="phoneNumber" class="block text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Nomor HP / WhatsApp</label>
+                        <input type="tel" id="phoneNumber" required placeholder="Contoh: 08123456789" class="w-full bg-mineDark-900 border border-white/10 rounded-xl px-4 py-3 text-xs text-gray-200 placeholder-gray-600 focus:outline-none focus:border-diamond transition-colors">
+                    </div>
+                </div>
+
+                <!-- URL Foto Profil dengan Upload Button -->
+                <div>
+                    <label for="avatarUrl" class="block text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">URL Foto Profil / Avatar (Opsional)</label>
+                    <div class="flex gap-2">
+                        <input type="url" id="avatarUrl" placeholder="Contoh: https://i.urusai.cc/nLeNn.jpg" class="flex-1 bg-mineDark-900 border border-white/10 rounded-xl px-4 py-3 text-xs text-gray-200 placeholder-gray-600 focus:outline-none focus:border-diamond transition-colors">
+                        <button type="button" onclick="openUploadModal('avatarUrl')" class="px-5 py-3 bg-diamond/10 hover:bg-diamond/20 border border-diamond/30 rounded-xl text-diamond text-xs font-bold transition-all whitespace-nowrap">
+                            <i class="fa-solid fa-upload mr-1"></i> Upload Foto
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Social Media Additions Form Group -->
+                <div class="space-y-4 pt-2 border-t border-white/5">
+                    <span class="block text-xs font-bold uppercase tracking-wider text-emeraldGlow">Media Sosial (Opsional)</span>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div class="relative">
+                            <input type="url" id="joinYoutube" placeholder="Tautan YouTube" class="w-full bg-mineDark-900 border border-white/10 rounded-xl pl-10 pr-4 py-3 text-xs text-gray-200 placeholder-gray-600 focus:outline-none focus:border-diamond">
+                            <i class="fa-brands fa-youtube absolute left-4 top-3.5 text-red-500"></i>
+                        </div>
+                        <div class="relative">
+                            <input type="url" id="joinTiktok" placeholder="Tautan TikTok" class="w-full bg-mineDark-900 border border-white/10 rounded-xl pl-10 pr-4 py-3 text-xs text-gray-200 placeholder-gray-600 focus:outline-none focus:border-diamond">
+                            <i class="fa-brands fa-tiktok absolute left-4 top-3.5 text-pink-500"></i>
+                        </div>
+                        <div class="relative">
+                            <input type="url" id="joinTelegram" placeholder="Tautan Telegram" class="w-full bg-mineDark-900 border border-white/10 rounded-xl pl-10 pr-4 py-3 text-xs text-gray-200 placeholder-gray-600 focus:outline-none focus:border-diamond">
+                            <i class="fa-brands fa-telegram absolute left-4 top-3.5 text-sky-400"></i>
+                        </div>
+                        <div class="relative">
+                            <input type="url" id="joinDiscord" placeholder="Tautan Server Discord" class="w-full bg-mineDark-900 border border-white/10 rounded-xl pl-10 pr-4 py-3 text-xs text-gray-200 placeholder-gray-600 focus:outline-none focus:border-diamond">
+                            <i class="fa-brands fa-discord absolute left-4 top-3.5 text-indigo-400"></i>
+                        </div>
+                        <div class="relative">
+                            <input type="url" id="joinInstagram" placeholder="Tautan Instagram" class="w-full bg-mineDark-900 border border-white/10 rounded-xl pl-10 pr-4 py-3 text-xs text-gray-200 placeholder-gray-600 focus:outline-none focus:border-diamond">
+                            <i class="fa-brands fa-instagram absolute left-4 top-3.5 text-pink-400"></i>
+                        </div>
+                        <div class="relative">
+                            <input type="url" id="joinGithub" placeholder="Tautan GitHub" class="w-full bg-mineDark-900 border border-white/10 rounded-xl pl-10 pr-4 py-3 text-xs text-gray-200 placeholder-gray-600 focus:outline-none focus:border-diamond">
+                            <i class="fa-brands fa-github absolute left-4 top-3.5 text-gray-400"></i>
+                        </div>
+                        <div class="relative">
+                            <input type="url" id="joinWhatsapp" placeholder="Tautan WhatsApp Channel" class="w-full bg-mineDark-900 border border-white/10 rounded-xl pl-10 pr-4 py-3 text-xs text-gray-200 placeholder-gray-600 focus:outline-none focus:border-diamond">
+                            <i class="fa-brands fa-whatsapp absolute left-4 top-3.5 text-emerald-500"></i>
+                        </div>
+                        <div class="relative">
+                            <input type="url" id="joinDonate" placeholder="Tautan Donasi (Trakteer/Saweria)" class="w-full bg-mineDark-900 border border-white/10 rounded-xl pl-10 pr-4 py-3 text-xs text-gray-200 placeholder-gray-600 focus:outline-none focus:border-diamond">
+                            <i class="fa-solid fa-hand-holding-dollar absolute left-4 top-3.5 text-emeraldGlow"></i>
+                        </div>
+                        <div class="relative">
+                            <input type="url" id="joinFacebook" placeholder="Tautan Facebook" class="w-full bg-mineDark-900 border border-white/10 rounded-xl pl-10 pr-4 py-3 text-xs text-gray-200 placeholder-gray-600 focus:outline-none focus:border-diamond">
+                            <i class="fa-brands fa-facebook absolute left-4 top-3.5 text-blue-500"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bio & Description (Optional) -->
+                <div>
+                    <label for="optionalDetails" class="block text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Biografi Singkat (Optional)</label>
+                    <textarea id="optionalDetails" rows="4" placeholder="Tuliskan biografi singkat diri Anda..." class="w-full bg-mineDark-900 border border-white/10 rounded-xl px-4 py-3 text-xs text-gray-200 placeholder-gray-600 focus:outline-none focus:border-diamond transition-colors resize-none"></textarea>
+                </div>
+
+                <!-- Terms and conditions checkbox -->
+                <div class="flex items-start space-x-3">
+                    <input type="checkbox" id="agreement" required class="mt-1 accent-diamond rounded cursor-pointer">
+                    <label for="agreement" class="text-xs text-gray-400 leading-relaxed cursor-pointer select-none">
+                        Saya bersedia menjalin komunikasi aktif dan menjaga nama baik perkumpulan serta komunitas Minecraft Indonesia.
+                    </label>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="pt-2">
+                    <button type="submit" class="w-full py-4 rounded-xl bg-gradient-to-r from-diamond to-emeraldGlow text-black font-extrabold tracking-widest text-xs uppercase hover:shadow-[0_0_30px_rgba(0,245,255,0.4)] transition-all duration-300">
+                        KIRIM PENDAFTARAN <i class="fa-solid fa-paper-plane ml-2"></i>
+                    </button>
+                </div>
+
+            </form>
+        </div>
+
+        <!-- ============================================ -->
+        <!-- PAGE 4: ADMIN PANEL                          -->
+        <!-- ============================================ -->
+        <div id="page-admin" class="virtual-page hidden space-y-12">
+
+            <!-- Page Header -->
+            <div class="flex flex-col md:flex-row justify-between items-end gap-6 border-b border-white/5 pb-8">
+                <div>
+                    <span class="text-xs font-bold tracking-widest text-yellow-500 uppercase font-mono">CONSOLA ADMIN HUB</span>
+                    <h2 class="text-3xl sm:text-4xl font-extrabold mt-2 text-white">Panel Unggahan & Validasi</h2>
+                    <p class="text-gray-400 mt-2 text-xs sm:text-sm max-w-xl">
+                        Halaman administrator internal untuk memvalidasi pendaftaran masuk atau mengunggah data anggota kreator secara langsung.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Admin Workspace Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+
+                <!-- Left: Direct Upload Creator Form -->
+                <div class="lg:col-span-6 glass-panel rounded-3xl p-6 sm:p-8 border border-white/10 space-y-5">
+                    <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                        <i class="fa-solid fa-user-plus text-diamond"></i> Tambah Creator Langsung
+                    </h3>
+                    <div class="h-[1px] bg-white/5"></div>
+
+                    <form id="directCreatorForm" class="space-y-4 text-xs">
+                        <div>
+                            <label class="block font-bold text-gray-400 mb-1.5 uppercase">Nama Lengkap / Nickname</label>
+                            <input type="text" id="adminName" required placeholder="Contoh: Azura_Builder" class="w-full bg-mineDark-900 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-gray-200 placeholder-gray-600 focus:outline-none focus:border-diamond">
+                        </div>
+
+                        <div>
+                            <label class="block font-bold text-gray-400 mb-1.5 uppercase">Foto Avatar URL (Opsional)</label>
+                            <div class="flex gap-2">
+                                <input type="url" id="adminAvatar" placeholder="https://..." class="flex-1 bg-mineDark-900 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-gray-200 placeholder-gray-600 focus:outline-none focus:border-diamond">
+                                <button type="button" onclick="openUploadModal('adminAvatar')" class="px-4 py-2.5 bg-diamond/10 hover:bg-diamond/20 border border-diamond/30 rounded-xl text-diamond text-xs font-bold transition-all whitespace-nowrap">
+                                    <i class="fa-solid fa-upload mr-1"></i> Upload
+                                </button>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block font-bold text-gray-400 mb-1.5 uppercase">Biografi Singkat</label>
+                            <textarea id="adminBio" required rows="3" placeholder="Deskripsikan kreator ini secara singkat..." class="w-full bg-mineDark-900 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-gray-200 placeholder-gray-600 focus:outline-none focus:border-diamond resize-none"></textarea>
+                        </div>
+
+                        <!-- Social Media URL Inputs -->
+                        <div class="space-y-3 pt-2">
+                            <span class="block font-bold text-gray-400 uppercase tracking-widest text-[9px] border-b border-white/5 pb-1">Tautan Sosial Media (Opsional)</span>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div class="relative">
+                                    <input type="url" id="adminYoutube" placeholder="YouTube Link" class="w-full bg-mineDark-900 border border-white/10 rounded-xl pl-9 pr-3 py-2 text-[11px] text-gray-200 focus:outline-none focus:border-diamond">
+                                    <i class="fa-brands fa-youtube absolute left-3 top-2.5 text-red-500"></i>
+                                </div>
+                                <div class="relative">
+                                    <input type="url" id="adminTiktok" placeholder="TikTok Link" class="w-full bg-mineDark-900 border border-white/10 rounded-xl pl-9 pr-3 py-2 text-[11px] text-gray-200 focus:outline-none focus:border-diamond">
+                                    <i class="fa-brands fa-tiktok absolute left-3 top-2.5 text-pink-500"></i>
+                                </div>
+                                <div class="relative">
+                                    <input type="url" id="adminTelegram" placeholder="Telegram Link" class="w-full bg-mineDark-900 border border-white/10 rounded-xl pl-9 pr-3 py-2 text-[11px] text-gray-200 focus:outline-none focus:border-diamond">
+                                    <i class="fa-brands fa-telegram absolute left-3 top-2.5 text-sky-400"></i>
+                                </div>
+                                <div class="relative">
+                                    <input type="url" id="adminDiscord" placeholder="Discord Invite" class="w-full bg-mineDark-900 border border-white/10 rounded-xl pl-9 pr-3 py-2 text-[11px] text-gray-200 focus:outline-none focus:border-diamond">
+                                    <i class="fa-brands fa-discord absolute left-3 top-2.5 text-indigo-400"></i>
+                                </div>
+                                <div class="relative">
+                                    <input type="url" id="adminInstagram" placeholder="Instagram Link" class="w-full bg-mineDark-900 border border-white/10 rounded-xl pl-9 pr-3 py-2 text-[11px] text-gray-200 focus:outline-none focus:border-diamond">
+                                    <i class="fa-brands fa-instagram absolute left-3 top-2.5 text-pink-400"></i>
+                                </div>
+                                <div class="relative">
+                                    <input type="url" id="adminGithub" placeholder="GitHub Link" class="w-full bg-mineDark-900 border border-white/10 rounded-xl pl-9 pr-3 py-2 text-[11px] text-gray-200 focus:outline-none focus:border-diamond">
+                                    <i class="fa-brands fa-github absolute left-3 top-2.5 text-gray-400"></i>
+                                </div>
+                                <div class="relative">
+                                    <input type="url" id="adminWhatsapp" placeholder="WhatsApp Channel" class="w-full bg-mineDark-900 border border-white/10 rounded-xl pl-9 pr-3 py-2 text-[11px] text-gray-200 focus:outline-none focus:border-diamond">
+                                    <i class="fa-brands fa-whatsapp absolute left-3 top-2.5 text-emerald-500"></i>
+                                </div>
+                                <div class="relative">
+                                    <input type="url" id="adminDonate" placeholder="Donate Link" class="w-full bg-mineDark-900 border border-white/10 rounded-xl pl-9 pr-3 py-2 text-[11px] text-gray-200 focus:outline-none focus:border-diamond">
+                                    <i class="fa-solid fa-hand-holding-dollar absolute left-3 top-2.5 text-emeraldGlow"></i>
+                                </div>
+                                <div class="relative">
+                                    <input type="url" id="adminFacebook" placeholder="Facebook Link" class="w-full bg-mineDark-900 border border-white/10 rounded-xl pl-9 pr-3 py-2 text-[11px] text-gray-200 focus:outline-none focus:border-diamond">
+                                    <i class="fa-brands fa-facebook absolute left-3 top-2.5 text-blue-500"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="w-full py-3 mt-2 rounded-xl bg-gradient-to-r from-diamond to-emeraldGlow text-black font-extrabold tracking-wider uppercase hover:shadow-[0_0_20px_rgba(0,245,255,0.3)] transition-all">
+                            TERBITKAN KREATOR BARU <i class="fa-solid fa-cloud-arrow-up ml-1.5"></i>
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Right: Pending Applicants Registrations -->
+                <div class="lg:col-span-6 glass-panel rounded-3xl p-6 sm:p-8 border border-white/10 space-y-5 flex flex-col h-full">
+                    <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                        <i class="fa-solid fa-clipboard-list text-emeraldGlow"></i> Antrean Pendaftaran Pendaftar
+                    </h3>
+                    <div class="h-[1px] bg-white/5"></div>
+
+                    <!-- Scrollable Registrations List -->
+                    <div id="pendingRegistrationsList" class="space-y-4 overflow-y-auto max-h-[500px] pr-2 flex-1">
+                        <!-- Dynamically Rendered pending registrations via JS -->
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Active Creator Management Section -->
+            <div class="glass-panel rounded-3xl p-6 sm:p-8 border border-white/10 space-y-6 mt-8">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                        <i class="fa-solid fa-users-gear text-diamond"></i> Kelola Creator Aktif
+                    </h3>
+                    <span class="text-[10px] text-gray-400 font-mono tracking-wider bg-white/5 px-3 py-1 rounded-full border border-white/10">Jumlah: <span id="adminStatsCount">0</span> Creator</span>
+                </div>
+                <div class="h-[1px] bg-white/5"></div>
+
+                <!-- Active Creator Table/List Layout -->
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse text-xs">
+                        <thead>
+                            <tr class="border-b border-white/10 text-gray-400 font-bold uppercase tracking-wider">
+                                <th class="pb-3 pl-2">Creator Info</th>
+                                <th class="pb-3 hidden md:table-cell">Bio Singkat</th>
+                                <th class="pb-3 hidden sm:table-cell">Sosial Media</th>
+                                <th class="pb-3 text-right pr-2">Aksi Kelola</th>
+                            </tr>
+                        </thead>
+                        <tbody id="adminCreatorsTableBody" class="divide-y divide-white/5">
+                            <!-- Populated Dynamically via JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Simplified Footer Section -->
+    <footer class="bg-mineDark-950 text-gray-400 py-16 border-t border-white/5 relative z-10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-2 gap-12">
+
+            <!-- Footer Brand -->
+            <div class="space-y-6">
+                <a href="#dashboard" class="flex items-center space-x-3 group">
+                    <div class="w-10 h-10 rounded-lg overflow-hidden border border-white/10 transition-all duration-300">
+                        <img src="https://i.urusai.cc/nLeNn.jpg" alt="IMCC Logo" class="w-full h-full object-cover">
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="font-extrabold text-2xl tracking-widest text-white font-mono">I.M.C.C</span>
+                        <span class="text-[9px] uppercase tracking-wider text-gray-400 font-semibold">Indonesia Minecraft Creator Community</span>
+                    </div>
+                </a>
+                <p class="text-xs leading-relaxed text-gray-500 max-w-sm">
+                    Membina, mendukung, dan menyatukan seluruh kreator berbakat Minecraft dari Sabang hingga Merauke dalam ekosistem inovasi digital orisinal Indonesia.
+                </p>
+                <!-- Community Social Icons -->
+                <div class="flex space-x-4">
+                    <a href="https://discord.gg/imcc" target="_blank" class="w-8 h-8 rounded-lg bg-white/5 hover:bg-diamond/10 border border-white/10 hover:border-diamond/30 flex items-center justify-center text-gray-300 hover:text-diamond transition-all" aria-label="Discord">
+                        <i class="fa-brands fa-discord text-sm"></i>
+                    </a>
+                    <a href="#" class="w-8 h-8 rounded-lg bg-white/5 hover:bg-diamond/10 border border-white/10 hover:border-diamond/30 flex items-center justify-center text-gray-300 hover:text-diamond transition-all" aria-label="YouTube">
+                        <i class="fa-brands fa-youtube text-sm"></i>
+                    </a>
+                    <a href="#" class="w-8 h-8 rounded-lg bg-white/5 hover:bg-diamond/10 border border-white/10 hover:border-diamond/30 flex items-center justify-center text-gray-300 hover:text-diamond transition-all" aria-label="Instagram">
+                        <i class="fa-brands fa-instagram text-sm"></i>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Footer Navigation -->
+            <div class="md:pl-12">
+                <h4 class="text-white font-bold text-xs uppercase tracking-widest mb-4 font-mono">Navigasi Halaman</h4>
+                <ul class="space-y-3 text-xs">
+                    <li><a href="#dashboard" class="hover:text-diamond transition-colors">Dashboard</a></li>
+                    <li><a href="#creators" class="hover:text-diamond transition-colors">Creator</a></li>
+                    <li><a href="#join" class="hover:text-diamond transition-colors">Daftar</a></li>
+                    <li class="admin-only" id="footerAdminLink"><a href="#admin" class="hover:text-diamond transition-colors">Admin Panel</a></li>
+                </ul>
+            </div>
+
+        </div>
+
+        <!-- Copyright Info -->
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 mt-12 border-t border-white/5 flex flex-col sm:flex-row justify-between items-center text-xs text-gray-600 gap-4">
+            <p>&copy; 2026 I.M.C.C (Indonesian Minecraft Creator Community). Hak Cipta Dilindungi.</p>
+            <p>Situs independen ini sama sekali tidak berafiliasi dengan Mojang Studios ataupun Microsoft.</p>
+        </div>
+    </footer>
+
+    <!-- Firebase SDK -->
+    <script type="module" src="app.js"></script>
+</body>
+</html>
